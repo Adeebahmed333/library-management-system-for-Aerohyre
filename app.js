@@ -1,6 +1,9 @@
 const express = require("express");
 const dotenv = require("dotenv");
 const connectDB = require("./src/config/db");
+const authRoutes = require("./src/routes/authRoutes");
+const bookRoutes = require("./src/routes/bookRoutes");
+const userRoutes = require("./src/routes/userRoutes");
 const errorHandler = require("./src/utils/errorHandler");
 const cors = require("cors");
 
@@ -14,6 +17,10 @@ app.use(cors());
 app.use(express.json());
 
 app.use(errorHandler);
+
+app.use("/api/auth", authRoutes);
+app.use("/api/books", bookRoutes);
+app.use("/api/users", userRoutes);
 
 const PORT = process.env.PORT || 5000;
 
