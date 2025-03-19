@@ -1,4 +1,5 @@
 const Book = require("../models/Book");
+const User = require("../models/User");
 
 // @desc    Add a new book
 // @route   POST /api/books
@@ -68,11 +69,23 @@ exports.borrowBook = async (req, res) => {
       return res.status(400).json({ msg: "No copies available" });
     }
 
+    // Update the book quantity
     book.quantity -= 1;
     await book.save();
 
-    // Here you would typically add logic to associate the book with the user
-    // For example, add the book to the user's borrowedBooks array
+    // Add the book to the user's borrowedBooks array
+    const user = await User.findById(req.params.userId);
+    if (!user) {
+      return res.status(404).json({ msg: "User not found" });
+    }
+
+    // Check if the book is already borrowed by the user
+    if (user.borrowedBooks.includes(req.params.bookId)) {
+      return res.status(400).json({ msg: "Book already borrowed by the user" });
+    }
+
+    user.borrowedBooks.push(req.params.bookId);
+    await user.save();
 
     res.json({ msg: "Book borrowed successfully", book });
   } catch (err) {
@@ -92,11 +105,25 @@ exports.returnBook = async (req, res) => {
       return res.status(404).json({ msg: "Book not found" });
     }
 
+    // Update the book quantity
     book.quantity += 1;
     await book.save();
 
-    // Here you would typically add logic to disassociate the book from the user
-    // For example, remove the book from the user's borrowedBooks array
+    // Remove the book from the user's borrowedBooks array
+    const user = await User.findById(req.params.userId);
+    if (!user) {
+      return res.status(404).json({ msg: "User not found" });
+    }
+
+    // Check if the book is borrowed by the user
+    if (!user.borrowedBooks.includes(req.params.bookId)) {
+      return res.status(400).json({ msg: "Book not borrowed by the user" });
+    }
+
+    user.borrowedBooks = user.borrowedBooks.filter(
+      (bookId) => bookId.toString() !== req.params.bookId
+    );
+    await user.save();
 
     res.json({ msg: "Book returned successfully", book });
   } catch (err) {
